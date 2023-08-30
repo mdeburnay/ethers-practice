@@ -1,25 +1,49 @@
-import { ethers, parseEther } from "ethers";
+// Dependencies: ethers, @uniswap/sdk
+import {
+  ChainId,
+  Fetcher,
+  WETH,
+  Route,
+  Trade,
+  TokenAmount,
+  TradeType,
+} from "@uniswap/sdk";
+import { ethers } from "ethers";
 
-let signer = null;
+const url = "ADD_YOUR_ETHEREUM_NODE_URL";
+const customHttpProvider = new ethers.providers.JsonRpcProvider(url);
 
-let provider;
-if (window.ethereum == null) {
-  // If MetaMask is not installed, we use the default provider,
-  // which is backed by a variety of third-party services (such
-  // as INFURA). They do not have private keys installed so are
-  // only have read-only access
-  console.log("MetaMask not installed; using read-only defaults");
-  provider = ethers.getDefaultProvider();
-} else {
-  // Connect to the MetaMask EIP-1193 object. This is a standard
-  // protocol that allows Ethers access to make all read-only
-  // requests through MetaMask.
-  provider = new ethers.BrowserProvider(window.ethereum);
+const chainId = ChainId.MAINNET;
+const tokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
-  // It also provides an opportunity to request access to write
-  // operations, which will be performed by the private key
-  // that MetaMask manages for the user.
-  signer = await provider.getSigner();
-}
+const init = async () => {
+  const dai = await Fetcher.fetchTokenData(
+    chainId,
+    tokenAddress,
+    customHttpProvider
+  );
+  const weth = WETH[chainId];
+  const pair = await Fetcher.fetchPairData(dai, weth, customHttpProvider);
+  const route = new Route([pair], weth);
+  const trade = new Trade(
+    route,
+    new TokenAmount(weth, "100000000000000000"),
+    TradeType.EXACT_INPUT
+  );
+  console.log("Mid Price WETH --> DAI:", route.midPrice.toSignificant(6));
+  console.log(
+    "Mid Price DAI --> WETH:",
+    route.midPrice.invert().toSignificant(6)
+  );
+  console.log("-".repeat(45));
+  console.log(
+    "Execution Price WETH --> DAI:",
+    trade.executionPrice.toSignificant(6)
+  );
+  console.log(
+    "Mid Price after trade WETH --> DAI:",
+    trade.nextMidPrice.toSignificant(6)
+  );
+};
 
-let eth = parseEther("1.0");
+init();
