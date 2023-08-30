@@ -1,11 +1,5 @@
 import { ethers, parseEther } from "ethers";
 
-declare global {
-  interface Window {
-    ethereum: any;
-  }
-}
-
 let signer = null;
 
 let provider;
